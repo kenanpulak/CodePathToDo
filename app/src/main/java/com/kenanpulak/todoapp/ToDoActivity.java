@@ -3,9 +3,13 @@ package com.kenanpulak.todoapp;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -20,24 +24,27 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import android.support.v7.app.ActionBarActivity;
+import android.widget.Toast;
 
-public class ToDoActivity extends ActionBarActivity {
+public class ToDoActivity extends FragmentActivity implements EditItemDialog.EditTextDialogListener {
 
     private final int REQUEST_CODE = 20;
     private ArrayList<String> toDoItems;
     private ArrayAdapter<String> toDoAdapter;
     private ListView lvItems;
     private EditText etNewItem;
+    private TextView tvItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_to_do);
-        this.getSupportActionBar().setTitle("Simple Todo");
+        this.setTitle("Simple Todo");
         lvItems = (ListView)findViewById(R.id.lvItems);
         etNewItem = (EditText)findViewById(R.id.etNewItem);
+        LayoutInflater inflater = this.getLayoutInflater();
         readItems();
-        toDoAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, toDoItems);
+        toDoAdapter = new ArrayAdapter<String>(this, R.layout.custom_text_view, toDoItems);
         lvItems.setAdapter(toDoAdapter);
         setupListViewListener();
     }
@@ -47,10 +54,20 @@ public class ToDoActivity extends ActionBarActivity {
         lvItems.setOnItemClickListener(new AdapterView.OnItemClickListener(){
             @Override
         public void onItemClick(AdapterView<?> adapterView, View view, int pos, long id){
-                Intent editIntent = new Intent(ToDoActivity.this,EditItemActivity.class);
-                editIntent.putExtra("pos",pos);
-                editIntent.putExtra("itemName",((TextView)view).getText());
-                startActivityForResult(editIntent, REQUEST_CODE);
+                //Intent editIntent = new Intent(ToDoActivity.this,EditItemActivity.class);
+                //editIntent.putExtra("pos",pos);
+                //editIntent.putExtra("itemName",((TextView)view).getText());
+                //startActivityForResult(editIntent, REQUEST_CODE);
+
+                final String itemName = ((TextView)view).getText().toString();
+
+                FragmentManager fm = getSupportFragmentManager();
+                EditItemDialog editItemDialog = EditItemDialog.newInstance("Some Title");
+                Bundle args = new Bundle();
+                args.putSerializable("pos", pos);
+                args.putSerializable("itemName",itemName);
+                editItemDialog.setArguments(args);
+                editItemDialog.show(fm, "fragment_edit_item");
             }
         });
 
@@ -102,6 +119,13 @@ public class ToDoActivity extends ActionBarActivity {
             toDoAdapter.notifyDataSetChanged();
             writeItems();
         }
+    }
+
+    @Override
+    public void onFinishEditDialog(String inputText, int pos) {
+        toDoItems.set(pos, inputText);
+        toDoAdapter.notifyDataSetChanged();
+        writeItems();
     }
 
     @Override
